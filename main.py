@@ -2,8 +2,11 @@ import os
 import discord
 from datetime import datetime
 import pytz
+import asyncio
 
 client = discord.Client(intents=discord.Intents.all())
+
+strIdentifiantNumMessage = "/"  #Char qui sépare le numero des différentes itérations des demandes d'informations du bot
 
 
 @client.event
@@ -19,19 +22,25 @@ async def on_message(message):
   if message.content.upper().startswith('!HELLO'):
     await message.channel.send("Hello !")
 
-  #lastBotMsg = await message.channel.history().find(
-  #lambda m: m.author.id == client.user.id)
-  #   lambda m: m.author == client.user)
-  #channel = client.get_channel(message.channel.id)
-  #print(channel.id)
-  #lastBotMsg = channel.history(limit=1)
-  #if lastBotMsg is not None:
-  #  print(lastBotMsg.flatten())
 
-  ############ Gestion des parties
-  strIdentifiantNumMessage = "/"  #Char qui sépare le numero des différentes itérations des demandes d'informations
+############ Gestion des parties
+###### Traitement des messages précédents si c'est en DM et s'ils existent
+  if isinstance(message.channel,
+                discord.channel.DMChannel):  #Si le message provient d'une DM
+    message.channel.typing()
+    await asyncio.sleep(1)
+    lastMsg = await discord.utils.find(lambda m: m.author == client.user,
+                                       message.channel.history())
+    if lastMsg is not None:
+      if lastMsg.content.startswith("# 1" + strIdentifiantNumMessage):
+        lastMsg = await discord.utils.find(
+            lambda m: m.author == message.author, message.channel.history())
+        print("Last Message =" + lastMsg.content)
+
   #  if message.content.upper().startswith("!PARTIE"):
   if message.content.upper().startswith("P"):
+    message.channel.typing()  #N'a pas l'air de marcher
+    #await asyncio.sleep(10)
     await message.author.send("# 1" + strIdentifiantNumMessage +
                               " Quel est le jour et l'heure de la partie ?" +
                               os.linesep + "## Réponse attendue:" +
@@ -55,6 +64,5 @@ async def on_message(message):
                               strftime("%-d %-m %-Hh%-M") + 2 * os.linesep +
                               "  Autres exemples" + os.linesep +
                               "1er Janvier à 8h ==> [1 1 8] ou [01 1 8h00]")
-
 
 client.run(os.environ['BOT_TOKEN'])  #Connexion to the Discord Server
